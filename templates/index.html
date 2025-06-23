@@ -1201,7 +1201,7 @@
           
           if (newSize >= 512) {
             console.log("✅ تم تحسين حجم الصورة إلى:", (newSize / 1024).toFixed(2) + " KB");
-            return sendToTelegram(barcode, higherQualityUrl);
+            return sendToTelegram(barcode, higherQualityUrl, barcode);
           } else {
             showMessage("⚠️ لا يمكن تحسين حجم الصورة", "warning");
             return false;
@@ -1219,7 +1219,7 @@
           
           if (compressedSize <= 20 * 1024 * 1024) {
             console.log("✅ تم ضغط الصورة إلى:", (compressedSize / 1024).toFixed(2) + " KB");
-            return sendToTelegram(barcode, compressedUrl);
+            return sendToTelegram(barcode, compressedUrl, barcode);
           } else {
             showMessage("⚠️ لا يمكن ضغط الصورة بما فيه الكفاية", "warning");
             return false;
@@ -1229,7 +1229,7 @@
         console.log("✅ تم التقاط الصورة بنجاح");
         
         // إرسال إلى تليجرام
-        const sendResult = sendToTelegram(barcode, imageDataUrl);
+        const sendResult = sendToTelegram(barcode, imageDataUrl, barcode);
         return sendResult;
         
     } catch (error) {
