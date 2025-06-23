@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file
 import sqlite3
 import time
 import base64
@@ -919,6 +919,11 @@ def telegram_monitor():
     """صفحة مراقبة التليجرام"""
     return render_template('telegram_monitor.html')
 
+@app.route('/test-duplicate-images')
+def test_duplicate_images():
+    """صفحة اختبار نظام الصور المكررة"""
+    return send_from_directory('.', 'test_duplicate_images.html')
+
 @app.route('/api/telegram/stats')
 def get_telegram_stats():
     """الحصول على إحصائيات التليجرام"""
@@ -1584,10 +1589,15 @@ def send_to_telegram_sync(barcode, image_data):
             'photo': ('barcode.jpg', io.BytesIO(image_bytes), 'image/jpeg')
         }
         
-        # إعداد البيانات
+        # تنظيف الباركود - إزالة الأصفار من البداية
+        clean_barcode = barcode.strip()
+        if clean_barcode.startswith("00"):
+            clean_barcode = clean_barcode[2:]
+        
+        # إعداد البيانات - نص مبسط فقط الرقم النظيف
         data = {
             'chat_id': chat_id,
-            'caption': f"باركود جديد: {barcode}\nالوقت: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            'caption': clean_barcode
         }
         
         # الإرسال

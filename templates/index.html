@@ -723,6 +723,9 @@
   
   <!-- مكتبة QuaggaJS للباركود العادي -->
   <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+  
+  <!-- نظام الصور المكررة المحسن -->
+  <script src="/static/duplicate-image.js"></script>
 
   <script>
     // إعدادات التليجرام
@@ -1360,9 +1363,9 @@
           displayBarcode = displayBarcode.substring(2);
         }
         
-        // إضافة النصوص
-        ctx.fillText("الباركود: " + displayBarcode, canvas.width - 20, 35);
-        ctx.fillText("الوقت: " + arabicDate, canvas.width - 20, 60);
+        // إضافة النصوص - عرض الرقم النظيف فقط
+        ctx.fillText(displayBarcode, canvas.width - 20, 35);
+        ctx.fillText(arabicDate, canvas.width - 20, 60);
         ctx.fillText("ماسح الباركود المتطور", canvas.width - 20, 85);
         
         // إضافة إطار زخرفي
@@ -2941,7 +2944,7 @@
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(10, 10, canvas.width - 20, 120);
         
-        // النصوص
+        // النصوص - عرض الرقم النظيف فقط
         ctx.font = "bold 20px Cairo";
         ctx.fillStyle = "#00ff88";
         ctx.textAlign = "right";
@@ -2951,8 +2954,9 @@
           displayBarcode = displayBarcode.substring(2);
         }
         
-        ctx.fillText("الباركود: " + displayBarcode, canvas.width - 20, 40);
-        ctx.fillText("الوقت: " + arabicDate, canvas.width - 20, 70);
+        // عرض الرقم النظيف فقط في الصورة
+        ctx.fillText(displayBarcode, canvas.width - 20, 40);
+        ctx.fillText(arabicDate, canvas.width - 20, 70);
         ctx.fillText("ماسح الباركود المتطور ⚡", canvas.width - 20, 100);
         
         // إطار زخرفي متحرك

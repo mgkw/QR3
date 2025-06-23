@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الصور المكررة</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input[type="text"]::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .error {
+            border-left-color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+        }
+        
+        .success {
+            border-left-color: #00ff88;
+            background: rgba(0,255,136,0.1);
+        }
+        
+        .log {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 اختبار نظام الصور المكررة</h1>
+        
+        <div class="test-section">
+            <h3>1. اختبار التحقق من التكرار</h3>
+            <div class="input-group">
+                <label for="barcode-check">الباركود للفحص:</label>
+                <input type="text" id="barcode-check" placeholder="أدخل الباركود للفحص">
+            </div>
+            <button onclick="testDuplicateCheck()">🔍 فحص التكرار</button>
+            <div id="check-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. اختبار جلب الصورة</h3>
+            <div class="input-group">
+                <label for="barcode-image">الباركود للحصول على الصورة:</label>
+                <input type="text" id="barcode-image" placeholder="أدخل الباركود للحصول على صورته">
+            </div>
+            <button onclick="testFetchImage()">📷 جلب الصورة</button>
+            <div id="image-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. اختبار عرض Modal</h3>
+            <div class="input-group">
+                <label for="barcode-modal">الباركود لعرض Modal:</label>
+                <input type="text" id="barcode-modal" placeholder="أدخل الباركود لعرض نافذة الصورة">
+            </div>
+            <button onclick="testShowModal()">🚨 عرض Modal</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. أمثلة للاختبار</h3>
+            <p>جرب هذه الباركودات للاختبار:</p>
+            <button onclick="setTestBarcode('0012345678')">0012345678</button>
+            <button onclick="setTestBarcode('123456789012')">123456789012</button>
+            <button onclick="setTestBarcode('9876543210')">9876543210</button>
+            <button onclick="setTestBarcode('test123')">test123</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 سجل الاختبار</h3>
+            <button onclick="clearLog()">🗑️ مسح السجل</button>
+            <div id="test-log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- تحميل نظام الصور المكررة -->
+    <script src="/static/duplicate-image.js"></script>
+    
+    <script>
+        // دوال الاختبار
+        let logElement = document.getElementById('test-log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const emoji = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logElement.innerHTML += `<div style="color: ${type === 'error' ? '#ff6b6b' : type === 'success' ? '#00ff88' : '#4ecdc4'};">[${timestamp}] ${emoji} ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('تم مسح السجل', 'info');
+        }
+        
+        async function testDuplicateCheck() {
+            const barcode = document.getElementById('barcode-check').value.trim();
+            const resultDiv = document.getElementById('check-result');
+            
+            if (!barcode) {
+                alert('الرجاء إدخال باركود للفحص');
+                return;
+            }
+            
+            log(`بدء فحص التكرار للباركود: ${barcode}`);
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 جاري الفحص...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`/api/check-duplicate/${encodeURIComponent(barcode)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.is_duplicate) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `
+                            <h4>🚨 باركود مكرر!</h4>
+                            <p><strong>عدد المسحات:</strong> ${data.scan_count}</p>
+                            <p><strong>آخر مسح:</strong> ${data.last_scan_datetime}</p>
+                            <p><strong>منذ:</strong> ${data.time_ago}</p>
+                            <p><strong>نوع البيانات:</strong> ${data.data_type || 'غير محدد'}</p>
+                        `;
+                        log(`باركود مكرر: ${barcode} (${data.scan_count} مرة)`, 'error');
+                    } else {
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = '<h4>✅ باركود جديد!</h4><p>هذا الباركود لم يتم مسحه من قبل.</p>';
+                        log(`باركود جديد: ${barcode}`, 'success');
+                    }
+                } else {
+                    throw new Error(`خطأ HTTP: ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ خطأ في الفحص</h4><p>${error.message}</p>`;
+                log(`خطأ في فحص ${barcode}: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFetchImage() {
+            const barcode = document.getElementById('barcode-image').value.trim();
+            const resultDiv = document.getElementById('image-result');
+            
+            if (!barcode) {
+                alert('الرجاء إدخال باركود للحصول على الصورة');
+                return;
+            }
+            
+            log(`بدء جلب صورة الباركود: ${barcode}`);
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 جاري جلب الصورة...';
+            resultDiv.className = 'result';
+            
+            try {
+                const imageData = await fetchBarcodeImage(barcode);
+                
+                if (imageData && imageData.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ تم العثور على الصورة!</h4>
+                        <p><strong>مسار الصورة:</strong> ${imageData.image_path}</p>
+                        <p><strong>تاريخ الإنشاء:</strong> ${imageData.created_datetime}</p>
+                        <p><strong>حالة الإرسال:</strong> ${imageData.status}</p>
+                        <p><strong>حجم الملف:</strong> ${Math.round(imageData.actual_file_size / 1024)} KB</p>
+                        <img src="${imageData.image_url}" style="max-width: 100%; margin-top: 10px; border-radius: 8px;">
+                    `;
+                    log(`تم جلب صورة ${barcode} بنجاح`, 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<h4>⚠️ لا توجد صورة</h4><p>لم يتم العثور على صورة محفوظة لهذا الباركود.</p>';
+                    log(`لا توجد صورة للباركود: ${barcode}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ خطأ في جلب الصورة</h4><p>${error.message}</p>`;
+                log(`خطأ في جلب صورة ${barcode}: ${error.message}`, 'error');
+            }
+        }
+        
+        function testShowModal() {
+            const barcode = document.getElementById('barcode-modal').value.trim();
+            
+            if (!barcode) {
+                alert('الرجاء إدخال باركود لعرض Modal');
+                return;
+            }
+            
+            log(`اختبار عرض Modal للباركود: ${barcode}`);
+            
+            try {
+                showDuplicateBarcodeImage(barcode);
+                log(`تم عرض Modal للباركود: ${barcode}`, 'success');
+            } catch (error) {
+                log(`خطأ في عرض Modal للباركود ${barcode}: ${error.message}`, 'error');
+            }
+        }
+        
+        function setTestBarcode(barcode) {
+            document.getElementById('barcode-check').value = barcode;
+            document.getElementById('barcode-image').value = barcode;
+            document.getElementById('barcode-modal').value = barcode;
+            log(`تم تعيين باركود الاختبار: ${barcode}`);
+        }
+        
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('تم تحميل صفحة اختبار الصور المكررة');
+            log('يمكنك الآن اختبار جميع الوظائف');
+        });
+    </script>
+</body>
+</html> 
