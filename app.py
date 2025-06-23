@@ -1224,40 +1224,61 @@ def get_detailed_stats():
 
 @app.route('/api/barcode-image/<barcode>')
 def get_barcode_last_image(barcode):
-    """الحصول على آخر صورة محفوظة لباركود معين"""
+    """الحصول على آخر صورة محفوظة لباركود معين مع تفاصيل شاملة"""
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             
             # البحث عن آخر صورة محفوظة لهذا الباركود
             cursor.execute("""
-            SELECT image_path, message_id, created_at, status
-            FROM telegram_messages 
-            WHERE barcode = ? AND image_path IS NOT NULL 
-            ORDER BY timestamp DESC 
+            SELECT tm.image_path, tm.message_id, tm.created_at, tm.status, tm.caption,
+                   tm.image_size, tm.response_time, b.scan_count, b.first_scan_timestamp
+            FROM telegram_messages tm
+            LEFT JOIN barcodes b ON tm.barcode = b.barcode
+            WHERE tm.barcode = ? AND tm.image_path IS NOT NULL 
+            ORDER BY tm.timestamp DESC 
             LIMIT 1
             """, (barcode,))
             
             result = cursor.fetchone()
             
             if result:
-                image_path, message_id, created_at, status = result
+                image_path, message_id, created_at, status, caption, image_size, response_time, scan_count, first_scan = result
                 
                 # التحقق من وجود الملف
                 full_path = os.path.join(IMAGES_DIR, image_path)
                 if os.path.exists(full_path):
+                    
+                    # حساب حجم الملف الفعلي
+                    actual_size = os.path.getsize(full_path)
+                    
+                    # تحويل التواريخ
+                    import datetime
+                    created_datetime = datetime.datetime.fromisoformat(created_at.replace('Z', '+00:00')) if created_at else None
+                    first_scan_datetime = datetime.datetime.fromtimestamp(first_scan) if first_scan else None
+                    
                     return jsonify({
                         'success': True,
                         'image_path': image_path,
                         'image_url': f'/images/{image_path}',
                         'message_id': message_id,
                         'created_at': created_at,
-                        'status': status
+                        'created_datetime': created_datetime.strftime('%Y-%m-%d %H:%M:%S') if created_datetime else None,
+                        'status': status,
+                        'caption': caption,
+                        'image_size': image_size,
+                        'actual_file_size': actual_size,
+                        'response_time': response_time,
+                        'scan_count': scan_count,
+                        'first_scan': first_scan_datetime.strftime('%Y-%m-%d %H:%M:%S') if first_scan_datetime else None,
+                        'file_exists': True
                     })
                 else:
                     return jsonify({
                         'success': False,
-                        'error': 'الملف غير موجود على القرص'
+                        'error': 'الملف غير موجود على القرص',
+                        'image_path': image_path,
+                        'file_exists': False
                     }), 404
             else:
                 return jsonify({
@@ -1268,6 +1289,347 @@ def get_barcode_last_image(barcode):
     except Exception as e:
         print(f"❌ خطأ في الحصول على صورة الباركود: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/performance-stats', methods=['GET'])
+def get_performance_stats():
+    """الحصول على إحصائيات الأداء للنظام الجديد"""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            
+            # إحصائيات المسح
+            cursor.execute("""
+            SELECT 
+                COUNT(*) as total_scans,
+                COUNT(CASE WHEN timestamp > ? THEN 1 END) as recent_scans,
+                AVG(length) as avg_barcode_length,
+                MAX(timestamp) as last_scan
+            FROM scan_history
+            """, (int(time.time()) - 3600,))  # آخر ساعة
+            
+            scan_stats = cursor.fetchone()
+            
+            # إحصائيات التليجرام
+            cursor.execute("""
+            SELECT 
+                COUNT(*) as total_messages,
+                AVG(response_time) as avg_response_time,
+                COUNT(CASE WHEN status = 'success' THEN 1 END) as success_rate,
+                SUM(image_size) as total_data_sent
+            FROM telegram_messages
+            WHERE timestamp > ?
+            """, (int(time.time()) - 3600,))
+            
+            telegram_stats = cursor.fetchone()
+            
+            # حالة الطابور
+            global telegram_queue, queue_processing
+            queue_stats = {
+                'queue_length': len(telegram_queue),
+                'is_processing': queue_processing,
+                'items_by_priority': {
+                    'urgent': sum(1 for item in telegram_queue if item.get('priority') == 'urgent'),
+                    'high': sum(1 for item in telegram_queue if item.get('priority') == 'high'),
+                    'normal': sum(1 for item in telegram_queue if item.get('priority') == 'normal')
+                }
+            }
+            
+            # تحضير الاستجابة
+            performance_data = {
+                'scanning': {
+                    'total_scans': scan_stats[0] or 0,
+                    'recent_scans': scan_stats[1] or 0,
+                    'avg_barcode_length': round(scan_stats[2] or 0, 1),
+                    'last_scan_timestamp': scan_stats[3],
+                    'scans_per_minute': round((scan_stats[1] or 0) / 60, 2)
+                },
+                'telegram': {
+                    'total_messages': telegram_stats[0] or 0,
+                    'avg_response_time': round(telegram_stats[1] or 0, 2),
+                    'success_rate': round(((telegram_stats[2] or 0) / max(telegram_stats[0], 1)) * 100, 1),
+                    'total_data_mb': round((telegram_stats[3] or 0) / (1024 * 1024), 2)
+                },
+                'queue': queue_stats,
+                'system': {
+                    'uptime': int(time.time()),  # يمكن تحسينه لاحقاً
+                    'database_size_mb': round(os.path.getsize(DB_FILE) / (1024 * 1024), 2) if os.path.exists(DB_FILE) else 0
+                }
+            }
+            
+            return jsonify(performance_data), 200
+            
+    except Exception as e:
+        print(f"❌ خطأ في إحصائيات الأداء: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== APIs جديدة للتحسينات ====================
+
+@app.route('/api/check-duplicate/<barcode>', methods=['GET'])
+def check_duplicate_fast(barcode):
+    """التحقق السريع من وجود باركود (API سريع جداً)"""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            
+            # استعلام سريع جداً للتحقق من وجود الباركود
+            cursor.execute("""
+            SELECT 
+                scan_count,
+                last_scan_timestamp,
+                first_scan_timestamp,
+                data_type,
+                length
+            FROM barcodes 
+            WHERE barcode = ?
+            """, (barcode,))
+            
+            result = cursor.fetchone()
+            
+            if result:
+                scan_count, last_scan, first_scan, data_type, length = result
+                
+                # حساب آخر مرة مسح
+                import datetime
+                last_scan_datetime = datetime.datetime.fromtimestamp(last_scan)
+                time_difference = int(time.time()) - last_scan
+                
+                # تحويل الفرق الزمني إلى نص
+                if time_difference < 60:
+                    time_ago = f"منذ {time_difference} ثانية"
+                elif time_difference < 3600:
+                    minutes = time_difference // 60
+                    time_ago = f"منذ {minutes} دقيقة"
+                elif time_difference < 86400:
+                    hours = time_difference // 3600
+                    time_ago = f"منذ {hours} ساعة"
+                else:
+                    days = time_difference // 86400
+                    time_ago = f"منذ {days} يوم"
+                
+                return jsonify({
+                    "is_duplicate": True,
+                    "scan_count": scan_count,
+                    "last_scan_timestamp": last_scan,
+                    "last_scan_datetime": last_scan_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+                    "time_ago": time_ago,
+                    "data_type": data_type,
+                    "length": length,
+                    "first_scan_timestamp": first_scan
+                }), 200
+            else:
+                return jsonify({
+                    "is_duplicate": False
+                }), 200
+                
+    except Exception as e:
+        print(f"❌ خطأ في التحقق السريع من التكرار: {str(e)}")
+        return jsonify({"error": "Internal server error", "is_duplicate": False}), 500
+
+# متغير global لطابور التليجرام
+telegram_queue = []
+queue_processing = False
+
+@app.route('/api/telegram/queue-add', methods=['POST'])
+def add_to_telegram_queue():
+    """إضافة رسالة إلى طابور التليجرام"""
+    global telegram_queue
+    
+    try:
+        data = request.json
+        barcode = data.get('barcode')
+        image_data = data.get('image_data')
+        priority = data.get('priority', 'normal')  # normal, high, urgent
+        
+        if not barcode or not image_data:
+            return jsonify({'error': 'الباركود وبيانات الصورة مطلوبان'}), 400
+        
+        # إنشاء معرف فريد للمهمة
+        import uuid
+        task_id = str(uuid.uuid4())
+        
+        # إضافة المهمة للطابور
+        queue_item = {
+            'task_id': task_id,
+            'barcode': barcode,
+            'image_data': image_data,
+            'priority': priority,
+            'timestamp': int(time.time()),
+            'status': 'queued',
+            'retry_count': 0,
+            'max_retries': 3
+        }
+        
+        # إدراج حسب الأولوية
+        if priority == 'urgent':
+            telegram_queue.insert(0, queue_item)
+        elif priority == 'high':
+            # إدراج في المقدمة بعد المهام العاجلة
+            urgent_count = sum(1 for item in telegram_queue if item.get('priority') == 'urgent')
+            telegram_queue.insert(urgent_count, queue_item)
+        else:
+            telegram_queue.append(queue_item)
+        
+        print(f"📥 تم إضافة {barcode} إلى طابور التليجرام (أولوية: {priority})")
+        
+        # بدء معالجة الطابور إذا لم تكن تعمل
+        if not queue_processing:
+            process_telegram_queue()
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'queue_position': len(telegram_queue),
+            'message': 'تمت إضافة المهمة للطابور'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ خطأ في إضافة مهمة للطابور: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/telegram/queue-status', methods=['GET'])
+def get_queue_status():
+    """الحصول على حالة طابور التليجرام"""
+    global telegram_queue, queue_processing
+    
+    try:
+        queue_stats = {
+            'total_items': len(telegram_queue),
+            'is_processing': queue_processing,
+            'items_by_priority': {
+                'urgent': sum(1 for item in telegram_queue if item.get('priority') == 'urgent'),
+                'high': sum(1 for item in telegram_queue if item.get('priority') == 'high'),
+                'normal': sum(1 for item in telegram_queue if item.get('priority') == 'normal')
+            },
+            'oldest_item': telegram_queue[0]['timestamp'] if telegram_queue else None,
+            'newest_item': telegram_queue[-1]['timestamp'] if telegram_queue else None
+        }
+        
+        return jsonify(queue_stats), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def process_telegram_queue():
+    """معالجة طابور التليجرام (يعمل في الخلفية)"""
+    global telegram_queue, queue_processing
+    
+    if queue_processing:
+        return
+    
+    queue_processing = True
+    print("🔄 بدء معالجة طابور التليجرام...")
+    
+    import threading
+    
+    def process_worker():
+        global telegram_queue, queue_processing
+        
+        while telegram_queue:
+            try:
+                # أخذ أول عنصر من الطابور
+                item = telegram_queue.pop(0)
+                
+                print(f"📤 معالجة مهمة: {item['barcode']} (محاولة {item['retry_count'] + 1})")
+                
+                # محاولة الإرسال
+                success = send_to_telegram_sync(
+                    item['barcode'], 
+                    item['image_data']
+                )
+                
+                if success:
+                    print(f"✅ تم إرسال {item['barcode']} بنجاح")
+                else:
+                    # إعادة المحاولة إذا لم تصل للحد الأقصى
+                    item['retry_count'] += 1
+                    if item['retry_count'] < item['max_retries']:
+                        print(f"🔄 إعادة محاولة {item['barcode']} ({item['retry_count']}/{item['max_retries']})")
+                        telegram_queue.append(item)  # إعادة إدراج في النهاية
+                    else:
+                        print(f"❌ فشل نهائي في إرسال {item['barcode']}")
+                
+                # انتظار قصير بين المهام
+                time.sleep(0.5)
+                
+            except Exception as e:
+                print(f"❌ خطأ في معالجة طابور التليجرام: {str(e)}")
+                time.sleep(1)
+        
+        queue_processing = False
+        print("✅ انتهاء معالجة طابور التليجرام")
+    
+    # تشغيل في thread منفصل
+    thread = threading.Thread(target=process_worker, daemon=True)
+    thread.start()
+
+def send_to_telegram_sync(barcode, image_data):
+    """إرسال متزامن للتليجرام (للاستخدام في الطابور)"""
+    try:
+        import requests
+        import base64
+        import io
+        
+        # إعدادات التليجرام
+        bot_token = "7668051564:AAFdFqSd0CKrlSOyPKyFwf-xHi791lcsC_U"
+        chat_id = "-1002439956600"
+        
+        # تحضير الصورة
+        if 'data:image' in image_data:
+            image_data = image_data.split(',')[1]
+        
+        image_bytes = base64.b64decode(image_data)
+        
+        # إنشاء الملف
+        files = {
+            'photo': ('barcode.jpg', io.BytesIO(image_bytes), 'image/jpeg')
+        }
+        
+        # إعداد البيانات
+        data = {
+            'chat_id': chat_id,
+            'caption': f"باركود جديد: {barcode}\nالوقت: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        }
+        
+        # الإرسال
+        response = requests.post(
+            f"https://api.telegram.org/bot{bot_token}/sendPhoto",
+            files=files,
+            data=data,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                # تسجيل النجاح
+                log_telegram_message(
+                    barcode=barcode,
+                    status='success',
+                    message_id=str(result['result']['message_id']),
+                    chat_id=chat_id,
+                    caption=data['caption'],
+                    image_size=len(image_bytes)
+                )
+                return True
+        
+        # تسجيل الفشل
+        log_telegram_message(
+            barcode=barcode,
+            status='failed',
+            error_message=f"HTTP {response.status_code}",
+            chat_id=chat_id
+        )
+        return False
+        
+    except Exception as e:
+        # تسجيل الخطأ
+        log_telegram_message(
+            barcode=barcode,
+            status='failed',
+            error_message=str(e),
+            chat_id=chat_id
+        )
+        return False
 
 # تهيئة التطبيق عند استيراده
 init_app()
