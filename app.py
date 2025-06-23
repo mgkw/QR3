@@ -190,7 +190,8 @@ def log_telegram_message(barcode, status='pending', **kwargs):
                 'error_code': kwargs.get('error_code'),
                 'error_message': kwargs.get('error_message'),
                 'data_type': kwargs.get('data_type', 'mixed'),
-                'bot_token': kwargs.get('bot_token')
+                'bot_token': kwargs.get('bot_token'),
+                'image_path': kwargs.get('image_path')
             }
             
             # إدراج الرسالة
@@ -198,14 +199,14 @@ def log_telegram_message(barcode, status='pending', **kwargs):
             INSERT INTO telegram_messages 
             (barcode, status, message_id, chat_id, caption, image_size, file_name,
              retry_count, response_time, error_code, error_message, data_type, 
-             bot_token, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             bot_token, timestamp, image_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 data['barcode'], data['status'], data['message_id'], 
                 data['chat_id'], data['caption'], data['image_size'],
                 data['file_name'], data['retry_count'], data['response_time'],
                 data['error_code'], data['error_message'], data['data_type'],
-                data['bot_token'], data['timestamp']
+                data['bot_token'], data['timestamp'], data['image_path']
             ))
             
             message_id = cursor.lastrowid
@@ -1219,6 +1220,53 @@ def get_detailed_stats():
             
     except Exception as e:
         print(f"❌ خطأ في الإحصائيات المفصلة: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/barcode-image/<barcode>')
+def get_barcode_last_image(barcode):
+    """الحصول على آخر صورة محفوظة لباركود معين"""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            
+            # البحث عن آخر صورة محفوظة لهذا الباركود
+            cursor.execute("""
+            SELECT image_path, message_id, created_at, status
+            FROM telegram_messages 
+            WHERE barcode = ? AND image_path IS NOT NULL 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+            """, (barcode,))
+            
+            result = cursor.fetchone()
+            
+            if result:
+                image_path, message_id, created_at, status = result
+                
+                # التحقق من وجود الملف
+                full_path = os.path.join(IMAGES_DIR, image_path)
+                if os.path.exists(full_path):
+                    return jsonify({
+                        'success': True,
+                        'image_path': image_path,
+                        'image_url': f'/images/{image_path}',
+                        'message_id': message_id,
+                        'created_at': created_at,
+                        'status': status
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'الملف غير موجود على القرص'
+                    }), 404
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'لا توجد صورة محفوظة لهذا الباركود'
+                }), 404
+                
+    except Exception as e:
+        print(f"❌ خطأ في الحصول على صورة الباركود: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # تهيئة التطبيق عند استيراده
