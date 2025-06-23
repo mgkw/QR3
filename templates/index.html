@@ -533,6 +533,10 @@
   <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
 
   <script>
+    // إعدادات التليجرام
+    const botToken = "7668051564:AAFdFqSd0CKrlSOyPKyFwf-xHi791lcsC_U";
+    const chatId = -1002439956600; console.log("?? ??????? ????????? ????? - Token:", !!botToken, "ChatId:", !!chatId);
+    
     // المتغيرات الأساسية
   const video = document.getElementById("video");
   const overlay = document.getElementById("overlay");
@@ -970,7 +974,7 @@
             status: 'pending',
             chat_id: chatId,
             caption: caption,
-            data_type: barcode.match(/^\\d+$/) ? 'numeric' : 'mixed'
+            data_type: barcode.match(/^\d+$/) ? 'numeric' : 'mixed'
           })
         });
 
@@ -1033,7 +1037,7 @@
               caption: caption,
               image_size: blob.size,
               response_time: responseTime,
-              data_type: barcode.match(/^\\d+$/) ? 'numeric' : 'mixed'
+              data_type: barcode.match(/^\d+$/) ? 'numeric' : 'mixed'
             })
           });
 
@@ -1056,7 +1060,7 @@
               response_time: responseTime,
               chat_id: chatId,
               caption: caption,
-              data_type: barcode.match(/^\\d+$/) ? 'numeric' : 'mixed'
+              data_type: barcode.match(/^\d+$/) ? 'numeric' : 'mixed'
             })
           });
 
@@ -1079,7 +1083,7 @@
             response_time: responseTime,
             chat_id: chatId,
             caption: caption,
-            data_type: barcode.match(/^\\d+$/) ? 'numeric' : 'mixed'
+            data_type: barcode.match(/^\d+$/) ? 'numeric' : 'mixed'
           })
         });
 
