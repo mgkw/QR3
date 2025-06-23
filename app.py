@@ -1225,7 +1225,12 @@ def get_detailed_stats():
 init_app()
 
 if __name__ == '__main__':
+    # إعدادات render.com
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    
     print("🚀 بدء تشغيل خادم ماسح الباركود...")
-    print("🌐 الرابط: http://localhost:5000")
-    print("🤖 مراقب التليجرام: http://localhost:5000/telegram-monitor")
-    app.run(debug=True, host='0.0.0.0')
+    print(f"🌐 المنفذ: {port}")
+    print("🤖 مراقب التليجرام: /telegram-monitor")
+    
+    app.run(debug=debug, host='0.0.0.0', port=port)
