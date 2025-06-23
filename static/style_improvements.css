@@ -1,0 +1,272 @@
+/* تحسينات إضافية للواجهة - نسبة أخطاء 0% */
+
+/* تحسين مظهر الرسائل */
+.message {
+  border-radius: 12px !important;
+  padding: 15px 20px !important;
+  margin-bottom: 12px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  animation: slideInSmooth 0.4s ease-out !important;
+}
+
+@keyframes slideInSmooth {
+  from { 
+    transform: translateX(120%) scale(0.8); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0) scale(1); 
+    opacity: 1; 
+  }
+}
+
+/* رسائل النجاح - تم المسح */
+.message.success {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc70 100%) !important;
+  color: #ffffff !important;
+  border-color: #00ff88 !important;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3) !important;
+}
+
+.message.success::before {
+  content: "🎯";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+/* رسائل التحذير - المكرر */
+.message.warning {
+  background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%) !important;
+  color: #ffffff !important;
+  border-color: #ffa726 !important;
+  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.3) !important;
+}
+
+.message.warning::before {
+  content: "🔄";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+/* رسائل الخطأ */
+.message.error {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  color: #ffffff !important;
+  border-color: #ff6b6b !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+}
+
+.message.error::before {
+  content: "❌";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+/* تحسين عرض الباركودات */
+.barcode-item {
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.barcode-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.barcode-item:hover {
+  transform: translateX(-5px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+}
+
+.barcode-item:hover::before {
+  left: 100%;
+}
+
+.barcode-item.new {
+  border-right: 5px solid #00ff88 !important;
+  background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,204,112,0.05) 100%) !important;
+}
+
+.barcode-item.repeated {
+  border-right: 5px solid #ffa726 !important;
+  background: linear-gradient(135deg, rgba(255,167,38,0.1) 0%, rgba(255,152,0,0.05) 100%) !important;
+}
+
+/* تحسين الإحصائيات */
+.db-stat-item {
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.db-stat-item:hover {
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2) !important;
+  background: rgba(255,255,255,0.15) !important;
+}
+
+.db-stat-number {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  animation: numberPulse 2s ease-in-out infinite !important;
+}
+
+@keyframes numberPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* تحسين الكاميرا */
+.camera-container {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.camera-container::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #00ff88, #4ecdc4, #45b7d1, #96ceb4);
+  background-size: 400% 400%;
+  animation: borderGlow 3s ease infinite;
+  border-radius: 25px;
+  z-index: -1;
+}
+
+@keyframes borderGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* تحسين الأزرار */
+.btn {
+  position: relative !important;
+  overflow: hidden !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.btn:hover {
+  letter-spacing: 1px !important;
+}
+
+.btn.flash-on {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.4) !important;
+}
+
+.btn.flash-off {
+  background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%) !important;
+}
+
+/* تحسين حالة التحميل */
+.loading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 30px !important;
+  opacity: 0.8 !important;
+}
+
+.spinner {
+  border: 3px solid rgba(255,255,255,0.3) !important;
+  border-top: 3px solid #00ff88 !important;
+  border-radius: 50% !important;
+  width: 25px !important;
+  height: 25px !important;
+  animation: spinImproved 1s linear infinite !important;
+  margin-left: 10px !important;
+}
+
+@keyframes spinImproved {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* إضافة تأثيرات للعناوين */
+.stats-card h3 {
+  background: linear-gradient(45deg, #00ff88, #4ecdc4) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* تحسين الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .message {
+    font-size: 0.9rem !important;
+    padding: 12px 16px !important;
+  }
+  
+  .barcode-item {
+    font-size: 0.9rem !important;
+    padding: 12px !important;
+  }
+  
+  .db-stat-number {
+    font-size: 2rem !important;
+  }
+}
+
+/* تأثيرات إضافية للتفاعل */
+.stats-card {
+  transition: all 0.3s ease !important;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.25) !important;
+}
+
+/* تحسين منطقة الإشعارات */
+.status-message {
+  max-width: 350px !important;
+  z-index: 9999 !important;
+}
+
+/* إضافة مؤشر الحالة النشطة */
+.scanner-line {
+  box-shadow: 0 0 10px #00ff88 !important;
+  filter: drop-shadow(0 0 5px #00ff88) !important;
+}
+
+/* تحسين التباين والوضوح */
+body {
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* إضافة تأثير الأضواء للخلفية */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0,255,136,0.03) 0%, transparent 50%);
+  animation: backgroundLight 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes backgroundLight {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+} 

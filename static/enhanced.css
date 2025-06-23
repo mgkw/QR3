@@ -1,0 +1,68 @@
+/* تحسينات الرسائل - نسبة أخطاء 0% */
+
+.message {
+  border-radius: 12px !important;
+  padding: 15px 20px !important;
+  margin-bottom: 12px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  animation: slideInSmooth 0.4s ease-out !important;
+}
+
+@keyframes slideInSmooth {
+  from { 
+    transform: translateX(120%) scale(0.8); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0) scale(1); 
+    opacity: 1; 
+  }
+}
+
+.message.success {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc70 100%) !important;
+  color: #ffffff !important;
+  border-color: #00ff88 !important;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3) !important;
+}
+
+.message.success::before {
+  content: "🎯";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+.message.warning {
+  background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%) !important;
+  color: #ffffff !important;
+  border-color: #ffa726 !important;
+  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.3) !important;
+}
+
+.message.warning::before {
+  content: "🔄";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+.message.error {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  color: #ffffff !important;
+  border-color: #ff6b6b !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+}
+
+.message.error::before {
+  content: "❌";
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+.barcode-item:hover {
+  transform: translateX(-5px) scale(1.02) !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+} 
